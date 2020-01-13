@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:tronald_dump_api/models/quotes.dart';
 
 import 'package:tronald_dump_api/providers/quote_provider.dart';
+import 'package:tronald_dump_api/widgets/loading.dart';
 import 'package:tronald_dump_api/widgets/my_app_bar.dart';
 import 'package:tronald_dump_api/widgets/quote_card.dart';
 
@@ -32,20 +33,23 @@ class _HomeState extends State<Home> {
       body: FutureBuilder<Quote>(
           future: quoteProvider.randomQuotes(),
           builder: (context, AsyncSnapshot snapshot) {
-            switch (snapshot.connectionState) {
-              case ConnectionState.done:
-                return ListView(
-                  children: <Widget>[
-                    QuoteCard(quote: snapshot.data),
-                  ],
-                );
-                break;
-              case ConnectionState.waiting:
-                return loading;
-                break;
-              default:
-                return null;
+            if (snapshot.data != null) {
+              switch (snapshot.connectionState) {
+                case ConnectionState.done:
+                  return ListView(
+                    children: <Widget>[
+                      QuoteCard(quote: snapshot.data),
+                    ],
+                  );
+                  break;
+                case ConnectionState.waiting:
+                  return loading;
+                  break;
+                default:
+                  return null;
+              }
             }
+            return Loading();
           }),
     );
   }

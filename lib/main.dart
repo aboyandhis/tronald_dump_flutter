@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/date_symbol_data_http_request.dart';
 import 'package:intl/intl_browser.dart';
 import 'package:provider/provider.dart';
 import 'package:tronald_dump_api/providers/quote_provider.dart';
+import 'package:tronald_dump_api/screens/faves.dart';
 import 'package:tronald_dump_api/screens/home.dart';
 import 'package:intl/intl.dart';
+import 'package:tronald_dump_api/screens/results.dart';
 import 'package:tronald_dump_api/screens/search_topics.dart';
+import 'package:tronald_dump_api/screens/tags.dart';
 
 void main() async {
   var local = await findSystemLocale();
@@ -27,11 +29,14 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Tronald Dump',
           theme: ThemeData(
-            primarySwatch: Colors.orange,
-          ),
-          home: Home(),
+              primaryColor: Colors.indigo[100],
+              accentColor: Colors.orange[200]),
+          home: Search(),
           routes: {
-            Topic.routeName: (BuildContext context) => Topic(),
+            Search.routeName: (BuildContext context) => Search(),
+            Results.routeName: (BuildContext context) => Results(),
+            Faves.routeName: (BuildContext context) => Faves(),
+            Tags.routeName: (BuildContext context) => Tags(),
           },
         ),
       ),

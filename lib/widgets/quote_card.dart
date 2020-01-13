@@ -1,34 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:tronald_dump_api/models/quotes.dart';
+import '../providers/quote_provider.dart';
 
 class QuoteCard extends StatelessWidget {
   final Quote quote;
+
+  const QuoteCard({Key key, this.quote}) : super(key: key);
+
   String formatDate(DateTime date) {
     return DateFormat.yMd().format(date);
   }
 
-  const QuoteCard({Key key, this.quote}) : super(key: key);
   @override
   Widget build(BuildContext context) {
-    var right = DismissDirection.startToEnd;
-    var left = DismissDirection.endToStart;
+    var service = Provider.of<QuoteProvider>(context);
+    var rightAdd = DismissDirection.startToEnd;
+    var leftDelete = DismissDirection.endToStart;
+    var size = MediaQuery.of(context).size;
 
     return Dismissible(
       key: Key(quote.value),
-      secondaryBackground: FavoriteBackground(),
-      background: DeleteBackround(),
+      secondaryBackground: DeleteBackround(),
+      background: service.faves.contains(quote) == false
+          ? FavoriteBackground()
+          : DeleteBackround(),
       onDismissed: (dir) {
-        if (dir == left) {
-          //delete
-        } else if (dir == right) {
-          //fave
+        if (dir == leftDelete) {
+          service.removeFromSearchResults(quote);
+          service.removeFromFaves(quote);
+        }
+        if (dir == rightAdd && service.faves.contains(quote) == false) {
+          service.updateFaves(quote);
+          service.removeFromSearchResults(quote);
+        } else if (dir == rightAdd && service.faves.contains(quote) == true) {
+          service.removeFromFaves(quote);
         }
       },
       direction: DismissDirection.horizontal,
       child: Center(
         child: Container(
+          width: size.width / 3,
           child: Card(
             elevation: 3,
             child: Padding(
@@ -48,11 +62,7 @@ class QuoteCard extends StatelessWidget {
                       Column(
                         children: <Widget>[
                           Text(quote.value),
-                          Text(
-                            formatDate(
-                              DateTime.parse(quote.appearedAt),
-                            ),
-                          ),
+                          Text(formatDate(DateTime.parse(quote.appearedAt))),
                         ],
                       ),
                     ],

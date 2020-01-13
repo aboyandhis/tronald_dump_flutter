@@ -1,54 +1,100 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
-
 import 'package:flutter/material.dart';
 import 'package:tronald_dump_api/models/quotes.dart';
+import 'package:tronald_dump_api/screens/results.dart';
+import 'package:tronald_dump_api/widgets/quote_card.dart';
+
+import '../models/quotes.dart';
 
 class QuoteProvider extends ChangeNotifier {
-  List<Quote> list = [];
-  QuotesList quotes;
-  Stream<Quote> quoteStream() => Stream.fromIterable(list);
+  List<Quote> _faves = [];
+  List<Quote> _searchResults = [];
 
-  set faveQuotes(Quote quotes) {
+  String _keyword;
+
+  searchState(String value) {
+    _keyword = value;
     notifyListeners();
   }
 
+  searchQuotes(String keyword) {
+    _keyword = keyword;
+    notifyListeners();
+  }
+
+  updateFaves(Quote qoute) {
+    _faves.add(qoute);
+    notifyListeners();
+  }
+
+  removeFromFaves(Quote qoute) {
+    _faves.remove(qoute);
+    notifyListeners();
+  }
+
+  List<Quote> get faves => _faves;
+
+  removeFromSearchResults(Quote qoute) {
+    _searchResults.remove(qoute);
+    notifyListeners();
+  }
+
+  updateTopics(List<Quote> list) {
+    _searchResults.clear();
+    _searchResults = list;
+    notifyListeners();
+  }
+
+  Stream<List<Quote>> getFaveStream() => Stream.value(_faves);
+  Stream<List<Quote>> getResultsStream() => Stream.value(_searchResults);
+
   //Calls TronaldDump.io and returns a random Quotes
   Future<Quote> randomQuotes() async {
-    try {
-      var response = await get('https://www.tronalddump.io/random/quote',
-          headers: {"accept": "application/hal+json"});
-      if (response.statusCode == 200)
-        return Quote.fromJson(jsonDecode(response.body));
-    } catch (e) {
-      print(e);
-      return null;
+    var json;
+    Response res = await get('https://www.tronalddump.io/random/quote',
+        headers: {"accept": "application/hal+json"});
+    if (res.statusCode == 200) {
+      json = jsonDecode(res.body);
     }
-    return null;
+    return Quote.fromJson(json);
+  }
+
+  Future tags() async {
+    var json;
+    Response res = await get('https://www.tronalddump.io/tag',
+        headers: {"accept": "application/hal+json"});
+    if (res.statusCode == 200) {
+      json = jsonDecode(res.body);
+    }
+    print(json);
+    return json;
   }
 
   //Calls TronaldDump.io with given value and adds result into the stream.
-  Future<List<Quote>> quoteSearch(String topic) async {
-    try {
-      var response = await get(
-        'https://www.tronalddump.io/search/quote?query=war',
-        headers: {
-          "accept": "application/hal+json",
-        },
-      );
-      if (response.statusCode == 200 && response.body != null) {
-        var items = jsonDecode(response.body);
-        var qlist = QuotesList.fromJson(items);
-        return qlist.eEmbedded.quotes;
+  quoteSearch(context) async {
+    _searchResults.clear();
+    Response response = await get(
+        'https://www.tronalddump.io/search/quote?query=$_keyword',
+        headers: {"accept": "application/hal+json"});
+    if (response.statusCode == 200) {
+      var decode = jsonDecode(response.body);
+      var list = QuotesList.fromJson(decode);
+      if (list.count > 0) {
+        _searchResults = list.eEmbedded.quotes;
+      } else {
+        var no = Quote.fromJson(
+            {"value": "Looks like he hasn\'t said anything about this yet."});
+        _searchResults.add(no);
       }
       notifyListeners();
-    } catch (e) {
-      print(e);
-      return null;
+      print(_searchResults.length);
+      Navigator.pushNamed(context, Results.routeName);
+    } else {
+      print('There was a problem searching qoutes');
+      print(response.statusCode);
     }
-    return null;
   }
 }
